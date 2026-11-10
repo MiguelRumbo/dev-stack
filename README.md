@@ -149,6 +149,10 @@ python scripts/bump-version.py metodo patch   # o minor / major
   el PR mensual de `update-pins.yml` ya sale versionado.
 - En local, `versions.py` compara con `origin/main`; en GitHub, con la base del PR o con el
   commit anterior del push.
+- **Tags:** cuando llega a `main` una versión nueva, `release-tags.yml` crea
+  `<plugin>--v<version>` (por ejemplo `metodo--v1.1.1`) en ese commit. Así queda registrado qué
+  es cada versión, y es la convención con la que Claude Code resuelve rangos de versión si otro
+  plugin depende de uno de estos. Para ver qué falta sin crear nada: `bash scripts/tag-releases.sh`.
 
 ### Otras notas
 
@@ -169,12 +173,13 @@ dev-stack/
       templates/            # CLAUDE.md y docs/ que copia /metodo:init
     frontend-design/        # vendorizado de anthropics/skills
     emil-design-eng/        # vendorizado (subconjunto) de emilkowalski/skill
-  .github/workflows/        # ci.yml (cada push/PR) y update-pins.yml (mensual)
+  .github/workflows/        # ci.yml (cada push/PR), update-pins.yml (mensual), release-tags.yml
   scripts/
     ci.sh                   # CI local = CI en GitHub
     update-pins.py          # buscar/fijar versiones nuevas + informe de riesgo
     sync-vendored.sh        # copias vendorizadas al sha de vendored.lock (sube su version si cambian)
     bump-version.py         # subir version de un plugin de este repo
+    tag-releases.sh         # tags <plugin>--v<version> que falten (lo usa release-tags.yml)
     vendored.lock
     checks/validate.py      # validación estructural
     checks/versions.py      # plugin cambiado => version subida
