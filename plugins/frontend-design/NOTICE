@@ -1,0 +1,3 @@
+Este plugin contiene la skill "frontend-design" copiada sin modificar desde
+https://github.com/anthropics/skills (licencia Apache 2.0, ver LICENSE).
+Se empaqueta sola porque el repo original agrupa 19 skills en un único plugin.

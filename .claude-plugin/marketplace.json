@@ -1,0 +1,103 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "dev-stack",
+  "description": "Stack personal de Claude Code: metodología, orquestación, arquitectura modular, patrones, documentación y git, más las skills de terceros que lo componen.",
+  "owner": {
+    "name": "MiguelRumbo"
+  },
+  "metadata": {
+    "version": "1.1.0"
+  },
+  "plugins": [
+    {
+      "name": "metodo",
+      "source": "./plugins/metodo",
+      "description": "Orquestación del stack: metodología de trabajo por fases, arquitectura modular por contratos, patrones de diseño, documentación en docs/ con bitácora y convenciones de git. Instalar siempre, primero.",
+      "category": "productivity",
+      "tags": [
+        "metodologia",
+        "orquestacion",
+        "arquitectura",
+        "documentacion",
+        "git"
+      ]
+    },
+    {
+      "name": "superpowers",
+      "source": {
+        "source": "github",
+        "repo": "obra/superpowers",
+        "sha": "22f0b463e7a5e579904dd6211a520321035526f7"
+      },
+      "description": "Flujo de ingeniería senior: brainstorming, planes, TDD, debugging sistemático, verificación y cierre de rama. Columna vertebral del proceso.",
+      "category": "productivity"
+    },
+    {
+      "name": "ponytail",
+      "source": {
+        "source": "github",
+        "repo": "DietrichGebert/ponytail",
+        "sha": "96608e078b2d5ea607c5c3b8b5a54d1c1fba6846"
+      },
+      "description": "Lazy senior dev: la solución más corta que funciona. YAGNI, stdlib primero, sin abstracciones no pedidas. Activo en fase de ejecución.",
+      "category": "productivity"
+    },
+    {
+      "name": "frontend-design",
+      "source": "./plugins/frontend-design",
+      "description": "Skill oficial de Anthropic: compromiso con una dirección visual antes de escribir UI. Copia vendorizada de anthropics/skills para traer solo esta skill (el repo original agrupa 19).",
+      "category": "design"
+    },
+    {
+      "name": "ui-ux-pro-max",
+      "source": {
+        "source": "github",
+        "repo": "nextlevelbuilder/ui-ux-pro-max-skill",
+        "sha": "6ae86f61f520d6ca229d2f40e070410638c908c5"
+      },
+      "description": "Catálogo consultable: estilos, paletas, pares tipográficos, charts y guías por stack (incluye React Native). Propone opciones; no decide.",
+      "category": "design"
+    },
+    {
+      "name": "impeccable",
+      "source": {
+        "source": "git-subdir",
+        "url": "pbakaus/impeccable",
+        "path": "plugin",
+        "sha": "ebe9c265f416f7f9b83ed424ed5b9bd0d2684536"
+      },
+      "description": "Vocabulario de diseño y detección de antipatrones. Audita, critica y pule lo construido. Nota: descarga un binario en su primer uso.",
+      "category": "design"
+    },
+    {
+      "name": "interface-design",
+      "source": {
+        "source": "github",
+        "repo": "Dammyjay93/interface-design",
+        "sha": "2f9be3206855bcb2d1d0af262c8bae25cba6658d"
+      },
+      "description": "Diseño de producto (dashboards, admin, SaaS, settings). Guarda decisiones en .interface-design/system.md entre sesiones. No para landings ni marketing.",
+      "category": "design"
+    },
+    {
+      "name": "emil-design-eng",
+      "source": "./plugins/emil-design-eng",
+      "description": "OPCIONAL. Animación y microinteracciones (Emil Kowalski). Subconjunto vendorizado: filosofía, animar, animar en Expo/React Native, coreografía, gestos, revisar y mejorar animaciones.",
+      "category": "design"
+    },
+    {
+      "name": "c4-skills",
+      "source": {
+        "source": "github",
+        "repo": "muthub-ai/c4-skills",
+        "sha": "670fdcd9a8bc6bc9583a56390877ec742fee50ac"
+      },
+      "description": "OPCIONAL, por proyecto. c4-model (qué arquitectura hay: diagramas C4 en Mermaid) y adr-scribe (por qué: ADRs formato MADR). Para proyectos facturables o con entrega de documentación.",
+      "category": "productivity",
+      "skills": [
+        "./c4designer",
+        "./adr-scribe"
+      ]
+    }
+  ]
+}

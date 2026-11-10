@@ -1,0 +1,12 @@
+{
+  "name": "metodo",
+  "version": "1.1.0",
+  "description": "Orquestación del stack dev-stack: metodología por fases, arquitectura modular por contratos, patrones de diseño, documentación en docs/ con bitácora, convenciones de git y seguridad (OWASP, ISO 27001, IA).",
+  "author": {
+    "name": "Miguel Rumbo"
+  },
+  "license": "MIT",
+  "keywords": ["metodologia", "orquestacion", "arquitectura", "patrones", "documentacion", "bitacora", "git", "commits", "seguridad", "owasp", "iso27001"],
+  "skills": "./skills/",
+  "hooks": "./hooks/hooks.json"
+}

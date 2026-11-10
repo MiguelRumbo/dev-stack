@@ -1,0 +1,9 @@
+{
+  "name": "frontend-design",
+  "version": "1.0.0",
+  "description": "Skill oficial frontend-design de Anthropic (anthropics/skills), empaquetada sola para no arrastrar las otras 18 skills del repo. Copia vendorizada; actualizar con scripts/sync-vendored.sh.",
+  "author": { "name": "Anthropic (skill); empaquetado en dev-stack" },
+  "license": "Apache-2.0",
+  "homepage": "https://github.com/anthropics/skills/tree/main/skills/frontend-design",
+  "skills": "./skills/"
+}

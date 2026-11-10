@@ -1,0 +1,9 @@
+{
+  "name": "emil-design-eng",
+  "version": "1.0.0",
+  "description": "Subconjunto de las skills de Emil Kowalski (emilkowalski/skill): filosofía de polish, animación web y en Expo/React Native, coreografía, gestos, revisión y mejora de animaciones. Copia vendorizada; actualizar con scripts/sync-vendored.sh.",
+  "author": { "name": "Emil Kowalski (skills); empaquetado en dev-stack" },
+  "license": "MIT",
+  "homepage": "https://github.com/emilkowalski/skill",
+  "skills": "./skills/"
+}
