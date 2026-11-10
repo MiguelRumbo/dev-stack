@@ -103,7 +103,7 @@ GitHub Actions corre el mismo script en cada push a `main` y en cada PR, en Linu
 
 Qué se comprueba: JSON y manifiestos válidos, plugins de terceros fijados a un `sha`, skills con
 frontmatter correcto, rutas de hooks y plantillas, referencias `metodo:<skill>` existentes,
-ningún nombre personal en skills/plantillas, 12 pruebas de los hooks y la validación oficial
+ningún nombre personal en skills/plantillas, 14 pruebas de los hooks y la validación oficial
 de Claude Code.
 
 ### Versiones fijadas y cómo actualizarlas
