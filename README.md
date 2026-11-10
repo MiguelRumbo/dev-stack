@@ -131,6 +131,25 @@ Actions to create and approve pull requests". Los PR creados por el bot no dispa
 y pone el resultado en el PR. Si quieres el check también en el PR, ejecútalo a mano desde
 Actions → CI sobre la rama.
 
+### Versión de los plugins de este repo
+
+Claude Code solo entrega una copia nueva de un plugin cuando cambia su `version` en
+`plugin.json`. Por eso `metodo`, `frontend-design` y `emil-design-eng` llevan `version`, y el CI
+(`scripts/checks/versions.py`) falla si un PR cambia algo dentro de `plugins/<x>/` sin subirla.
+Así cada versión corresponde a un solo contenido y los usuarios solo reciben lo que publicas
+a propósito, aunque `main` siga avanzando.
+
+```bash
+python scripts/bump-version.py metodo patch   # o minor / major
+```
+
+- **patch:** arreglos y ajustes de texto. **minor:** skill, hook o plantilla nuevos.
+  **major:** cambio que obliga a tocar proyectos ya inicializados.
+- `sync-vendored.sh` sube patch en las copias vendorizadas cuando su contenido cambia, así que
+  el PR mensual de `update-pins.yml` ya sale versionado.
+- En local, `versions.py` compara con `origin/main`; en GitHub, con la base del PR o con el
+  commit anterior del push.
+
 ### Otras notas
 
 - `docs/COMPATIBILIDAD.md` tiene la matriz de solapes y la revisión de seguridad; repasarla
@@ -154,9 +173,11 @@ dev-stack/
   scripts/
     ci.sh                   # CI local = CI en GitHub
     update-pins.py          # buscar/fijar versiones nuevas + informe de riesgo
-    sync-vendored.sh        # copias vendorizadas al sha de vendored.lock
+    sync-vendored.sh        # copias vendorizadas al sha de vendored.lock (sube su version si cambian)
+    bump-version.py         # subir version de un plugin de este repo
     vendored.lock
     checks/validate.py      # validación estructural
+    checks/versions.py      # plugin cambiado => version subida
     tests/hooks.sh          # pruebas de los hooks
   docs/COMPATIBILIDAD.md
   docs/PINS.md              # versiones fijadas (generado)
