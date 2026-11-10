@@ -1,0 +1,28 @@
+name: Tags de versión
+
+# Al llegar a main una versión nueva de un plugin de este repo, crea <plugin>--v<version>.
+on:
+  push:
+    branches: [main]
+    paths: ["plugins/*/.claude-plugin/plugin.json"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-tags
+  cancel-in-progress: false
+
+jobs:
+  tag:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Crear tags que falten
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          bash scripts/tag-releases.sh --push
