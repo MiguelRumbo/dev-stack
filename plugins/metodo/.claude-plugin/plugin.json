@@ -6,6 +6,7 @@
     "name": "Miguel Rumbo"
   },
   "license": "MIT",
+  "icon": "./.claude-plugin/icon.png",
   "keywords": ["metodologia", "orquestacion", "arquitectura", "patrones", "documentacion", "bitacora", "git", "commits", "seguridad", "owasp", "iso27001"],
   "skills": "./skills/",
   "hooks": "./hooks/hooks.json"

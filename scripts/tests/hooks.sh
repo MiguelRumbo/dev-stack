@@ -15,6 +15,7 @@ check() {
 
 valid_json() { printf '%s' "$1" | "$py" -c 'import json,sys; json.load(sys.stdin)' 2>/dev/null; }
 contains() { case "$1" in *"$2"*) return 0 ;; *) return 1 ;; esac; }
+empty() { [ -z "$1" ]; }
 
 new_repo() {
   local d
@@ -45,7 +46,7 @@ rm -rf "$d"
 echo "stop-check.sh"
 d=$(mktemp -d)
 out=$(cd "$d" && echo '{}' | bash "$hooks/stop-check.sh")
-[ -z "$out" ]; check "fuera de git: silencio" $?
+empty "$out"; check "fuera de git: silencio" $?
 rm -rf "$d"
 
 d=$(new_repo)
@@ -58,11 +59,11 @@ out=$(cd "$d" && echo '{}' | bash "$hooks/stop-check.sh")
 valid_json "$out" && contains "$out" "systemMessage"; check "código sin docs: avisa" $?
 
 out=$(cd "$d" && echo '{"stop_hook_active":true}' | bash "$hooks/stop-check.sh")
-[ -z "$out" ]; check "stop_hook_active: no repite el aviso" $?
+empty "$out"; check "stop_hook_active: no repite el aviso" $?
 
 echo y >> "$d/docs/BITACORA.md"
 out=$(cd "$d" && echo '{}' | bash "$hooks/stop-check.sh")
-[ -z "$out" ]; check "código con bitácora: silencio" $?
+empty "$out"; check "código con bitácora: silencio" $?
 
 git -C "$d" checkout -q -- . && git -C "$d" mv "src/mi archivo.ts" "src/otro nombre.ts"
 out=$(cd "$d" && echo '{}' | bash "$hooks/stop-check.sh")
@@ -70,7 +71,7 @@ contains "$out" "systemMessage"; check "renombre con espacios: avisa" $?
 
 git -C "$d" reset -q --hard && echo z >> "$d/README.md"
 out=$(cd "$d" && echo '{}' | bash "$hooks/stop-check.sh")
-[ -z "$out" ]; check "solo .md cambiado: silencio" $?
+empty "$out"; check "solo .md cambiado: silencio" $?
 rm -rf "$d"
 
 echo "hooks.sh: $pass ok, $fail fallo(s)"
