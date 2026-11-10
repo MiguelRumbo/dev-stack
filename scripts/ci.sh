@@ -30,6 +30,7 @@ step() {
 skip() { echo; echo "SALTO  $1"; }
 
 step "Estructura del marketplace" "$PY" scripts/checks/validate.py
+step "Versión de plugins cambiados" "$PY" scripts/checks/versions.py
 step "Tests de hooks" bash scripts/tests/hooks.sh
 step "Sintaxis bash" bash -c 'for f in $(find . -name "*.sh" -not -path "./.git/*"); do bash -n "$f" || exit 1; done'
 

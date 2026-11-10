@@ -31,4 +31,10 @@ for s in emil-design-eng animate animate-expo animation-vocabulary review-animat
 done
 cp "$tmp/emil/LICENSE" "$root/plugins/emil-design-eng/LICENSE"
 
+# Un cambio de contenido sin subir version no llega a quien ya tiene el plugin instalado.
+py=$(command -v python3 || command -v python || command -v py) || { echo "Falta Python" >&2; exit 1; }
+for p in frontend-design emil-design-eng; do
+  "$py" "$root/scripts/bump-version.py" "$p" --if-changed
+done
+
 echo "Sincronizado. Corre bash scripts/ci.sh y revisa el diff antes de commitear."
