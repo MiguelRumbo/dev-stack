@@ -41,6 +41,11 @@ out=$(cd "$d" && bash "$hooks/session-start.sh")
 valid_json "$out"; check "con bitácora y comillas: JSON válido" $?
 contains "$out" "dos"; check "con bitácora: incluye últimas entradas" $?
 contains "$out" "comentarios en codigo: completos"; check "lee el modo de comentarios de CLAUDE.md" $?
+
+printf '# B\n\n## Índice\n\n## 2026-01-01 — uno\n\n## 2026-01-02 — dos\n\n## Archivo histórico\n\n- 2025-Q4\n' > "$d/docs/BITACORA.md"
+out=$(cd "$d" && bash "$hooks/session-start.sh")
+contains "$out" "uno" && contains "$out" "dos"; check "bitácora: toma las 2 últimas entradas con fecha" $?
+! contains "$out" "Archivo" && ! contains "$out" "Índice"; check "bitácora: ignora títulos ## sin fecha" $?
 rm -rf "$d"
 
 echo "stop-check.sh"

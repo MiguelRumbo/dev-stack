@@ -50,7 +50,7 @@ Para que un proyecto registre el marketplace solo, en `.claude/settings.json` de
 /metodo:init
 ```
 
-Crea `CLAUDE.md`, `docs/` (índice, arquitectura, bitácora, ADRs, plantilla de módulo),
+Crea `CLAUDE.md`, `docs/` (índice, arquitectura, bitácora, ADRs, plantilla de módulo,
 `seguridad.md`), `.gitignore` y, si eliges arquitectura modular, la regla de lint contra imports cruzados.
 Después, cualquier tarea no trivial pasa por `metodo:metodo`.
 
@@ -87,12 +87,6 @@ El detalle de fases, reparto y arbitraje está en
 Regla práctica: si una instrucción la repetirías en dos proyectos, es del stack; si no, del
 `CLAUDE.md`. `CLAUDE.md` se mantiene corto porque las reglas gordas viven en las skills.
 
-## Por qué no está caveman
-
-Se quitó en la 1.1.0: pesaba ~2k tokens siempre en contexto, traía 23 skills de las que el
-stack usaba dos, y sus skills de proceso se pisaban con superpowers y ponytail. Ponytail ya
-compacta las respuestas.
-
 ## Mantener el marketplace
 
 Requisitos locales: Git Bash (en Windows), Python 3.8+ y, para la validación oficial, Node.
@@ -109,7 +103,7 @@ GitHub Actions corre el mismo script en cada push a `main` y en cada PR, en Linu
 
 Qué se comprueba: JSON y manifiestos válidos, plugins de terceros fijados a un `sha`, skills con
 frontmatter correcto, rutas de hooks y plantillas, referencias `metodo:<skill>` existentes,
-ningún nombre personal en skills/plantillas, 12 pruebas de los hooks y la validación oficial
+ningún nombre personal en skills/plantillas, 14 pruebas de los hooks y la validación oficial
 de Claude Code.
 
 ### Versiones fijadas y cómo actualizarlas

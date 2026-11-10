@@ -3,8 +3,8 @@
 Revisado el 2026-11-09 clonando cada repo e instalando los plugins desde este marketplace
 con Claude Code 2.1.321. Los números de skills y tokens salen de `claude plugin details`.
 
-2026-11-10: se quita caveman del marketplace (solapes y ~2k tokens fijos) y `metodo` suma la
-skill `seguridad` (la cifra de metodo es estimada; volver a medir con `claude plugin details`).
+2026-11-10: `metodo` suma la skill `seguridad` (la cifra de metodo es estimada; volver a medir
+con `claude plugin details`).
 
 ## Inventario real
 
