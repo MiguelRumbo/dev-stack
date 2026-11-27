@@ -4,6 +4,10 @@
 Comprueba: JSON válido, manifiestos, fuentes externas fijadas a sha, skills con frontmatter
 correcto, rutas de hooks y plantillas, referencias metodo:<skill>, y que las skills y
 plantillas no lleven nombres personales escritos a mano.
+
+También lo que claude.ai rechaza al sincronizar el marketplace aunque Claude Code lo tolere:
+campos de plugin.json o de hooks que no reconoce, y entradas que hacen de manifiesto sin
+"strict": false.
 """
 import json
 import re
@@ -13,6 +17,20 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 SHA = re.compile(r"^[0-9a-f]{40}$")
 SEMVER = re.compile(r"^\d+\.\d+\.\d+$")
+# Campos de plugin.json según https://code.claude.com/docs/en/plugins/manifest-reference.
+# Uno que no esté aquí lo descarta claude.ai con un aviso. Si se documenta uno nuevo, añádelo.
+MANIFEST_FIELDS = {
+    "$schema", "name", "displayName", "version", "description", "author", "homepage",
+    "repository", "license", "keywords", "metadata", "defaultEnabled", "dependencies",
+    "settings", "userConfig", "channels", "skills", "commands", "agents", "hooks",
+    "mcpServers", "lspServers", "outputStyles", "workflows", "experimental",
+}
+# Campos de una entrada del marketplace que la convierten en manifiesto del plugin.
+COMPONENT_FIELDS = {"commands", "agents", "skills", "hooks", "outputStyles", "themes",
+                    "mcpServers", "lspServers"}
+# Campos de un hook "type": "command" según https://code.claude.com/docs/en/hooks.
+COMMAND_HOOK_FIELDS = {"type", "command", "args", "async", "asyncRewake", "shell", "onFailure",
+                       "if", "timeout", "statusMessage", "once"}
 errors = []
 warnings = []
 
@@ -83,6 +101,10 @@ def check_hooks(plugin_dir, manifest):
     for event, groups in data.get("hooks", {}).items():
         for group in groups:
             for hook in group.get("hooks", []):
+                if hook.get("type") == "command":
+                    for key in sorted(set(hook) - COMMAND_HOOK_FIELDS):
+                        err(f"{rel(hooks_file)}: {event} usa el campo '{key}', que Claude Code "
+                            "no reconoce (claude.ai lo descarta con un aviso)")
                 for ref in re.findall(r"\$\{CLAUDE_PLUGIN_ROOT\}/([^\"'\s]+)", hook.get("command", "")):
                     if not (plugin_dir / ref).exists():
                         err(f"{rel(hooks_file)}: {event} usa {ref}, que no existe")
@@ -134,6 +156,11 @@ def main():
                 err(f"{rel(manifest_path)}: name '{manifest.get('name')}' ≠ '{name}' del marketplace")
             if "version" in manifest and not SEMVER.match(manifest["version"]):
                 err(f"{rel(manifest_path)}: version '{manifest['version']}' no es semver")
+            for key in sorted(set(manifest) - MANIFEST_FIELDS):
+                hint = (" (el icono se toma de .claude-plugin/icon.png sin declararlo)"
+                        if key == "icon" else "")
+                err(f"{rel(manifest_path)}: campo '{key}' desconocido; claude.ai lo descarta "
+                    f"con un aviso{hint}")
             for lic in ("LICENSE",):
                 if not (pdir / lic).exists():
                     err(f"{rel(pdir)}: falta {lic}")
@@ -145,6 +172,11 @@ def main():
                 err(f"marketplace.json: '{name}' con source desconocido '{kind}'")
             if not SHA.match(src.get("sha", "")):
                 err(f"marketplace.json: '{name}' no está fijado a un sha de 40 caracteres (python scripts/update-pins.py --apply)")
+            inline = sorted(COMPONENT_FIELDS & set(p))
+            if inline and p.get("strict") is not False:
+                err(f"marketplace.json: '{name}' declara {', '.join(inline)} en la entrada; si "
+                    "upstream no trae plugin.json, la entrada es el manifiesto y claude.ai "
+                    "omite el plugin sin \"strict\": false")
         else:
             err(f"marketplace.json: '{name}' sin source")
 

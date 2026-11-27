@@ -3,14 +3,14 @@
 Revisado el 2026-11-09 clonando cada repo e instalando los plugins desde este marketplace
 con Claude Code 2.1.321. Los números de skills y tokens salen de `claude plugin details`.
 
-2026-11-10: `metodo` suma la skill `seguridad` (la cifra de metodo es estimada; volver a medir
-con `claude plugin details`).
+2026-11-10: `metodo` suma la skill `seguridad`. 2026-11-27: medido de nuevo con Claude Code
+2.1.332 (~1.65k).
 
 ## Inventario real
 
 | Plugin | Origen | Formato upstream | Skills | Agents | Hooks | Siempre-en-contexto | Licencia |
 |---|---|---|---|---|---|---|---|
-| metodo | este repo | plugin | 7 | 0 | SessionStart, Stop | ~1.5k tok (est.) | MIT |
+| metodo | este repo | plugin | 7 | 0 | SessionStart, Stop | ~1.65k tok | MIT |
 | superpowers | obra/superpowers | plugin | 15 | 0 | SessionStart | ~0.85k | MIT |
 | ponytail | DietrichGebert/ponytail | plugin | 6 | 0 | SessionStart, SubagentStart, UserPromptSubmit | ~0.64k | MIT |
 | frontend-design | anthropics/skills → vendorizado aquí | skill suelta dentro de un plugin de 19 | 1 | 0 | — | ~0.08k | Apache-2.0 |
@@ -20,8 +20,8 @@ con `claude plugin details`).
 | emil-design-eng | emilkowalski/skill → vendorizado aquí | 18 skills sin plugin.json | 8 (subconjunto) | 0 | — | ~1.4k | MIT |
 | c4-skills | muthub-ai/c4-skills | 2 skills sin plugin.json (la entrada del marketplace es el manifiesto) | 2 | 0 | — | ~0.5k | MIT |
 
-Total si instalas los 9: **~6.6k tokens** siempre en contexto. Stack recomendado (sin emil):
-**~5.2k**.
+Total si instalas los 9: **~6.8k tokens** siempre en contexto. Stack recomendado (sin emil):
+**~5.4k**.
 
 ## Por qué dos están vendorizados
 
@@ -32,7 +32,24 @@ y el subconjunto de Emil se copian a `plugins/` de este repo. Se refrescan con
 `scripts/sync-vendored.sh`. Ambas licencias lo permiten; se conserva LICENSE y NOTICE.
 
 c4-skills no tiene `skills/` en raíz (sus carpetas son `c4designer/` y `adr-scribe/`), así
-que la entrada con `skills: [...]` funciona sin vendorizar.
+que la entrada con `skills: [...]` funciona sin vendorizar. Como tampoco trae `plugin.json`,
+la entrada lleva `"strict": false` (ver abajo).
+
+## Avisos al sincronizar en claude.ai
+
+claude.ai valida el marketplace con su propio esquema al sincronizarlo, más estricto que
+Claude Code en algunos puntos. Lo que pasa `claude plugin validate --strict` puede salir allí
+como omitido o con avisos.
+
+| Aviso | Causa | Qué se hizo |
+|---|---|---|
+| c4-skills omitido: *requires .claude-plugin/plugin.json …* | Upstream no trae `plugin.json`; la entrada es el manifiesto | `"strict": false` en la entrada. Claude Code ya la usaba así (con o sin `strict`). `validate.py` lo exige y `update-pins.py` avisa 🚨 si upstream añade un `plugin.json`, porque entonces `strict: false` + `skills` es un conflicto y el plugin no carga |
+| metodo: *unrecognized key 'icon'* | `icon` no está en el esquema de claude.ai | Quitado de `plugin.json`. El icono sigue en `.claude-plugin/icon.png`, ruta que se detecta sin declararla. `validate.py` falla con campos desconocidos |
+| superpowers: campo `powershell` en el hook SessionStart | Campo para otros agentes; en Claude Code la variante Windows es `"shell": "powershell"` | Nada que hacer aquí: el hook corre con `command`. Es upstream |
+| impeccable: campos `env` y `windows` en SessionStart, PostToolUse y Stop | Campos para otros agentes (VS Code, Windows sin Git Bash) | Igual: el hook corre con `command`, sin la variable `IMPECCABLE_HOOK_HARNESS=vscode` de `env` (pensada para VS Code). Su versión siguiente añade `commandWindows`, que dará un aviso más por hook |
+
+Los avisos de hooks de terceros son inofensivos y solo se quitan cambiando el repo upstream.
+El informe de `update-pins.py` marca con ℹ️ los campos de hook nuevos de este tipo.
 
 ## Solapes detectados y cómo se resuelven
 

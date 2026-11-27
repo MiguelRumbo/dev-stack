@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # CI del marketplace. El mismo script corre en local y en GitHub Actions.
 # Uso: bash scripts/ci.sh            # validación propia + tests de hooks + shellcheck si está
-#      bash scripts/ci.sh --claude   # además `claude plugin validate .` (usa npx si no hay claude)
+#      bash scripts/ci.sh --claude   # además `claude plugin validate --strict` (usa npx si no hay claude)
 set -uo pipefail
 root=$(cd "$(dirname "$0")/.." && pwd)
 cd "$root" || exit 1
@@ -50,9 +50,11 @@ if [ "$with_claude" = 1 ]; then
     echo "FALLO  claude plugin validate: no hay claude ni npx"; failed+=("claude plugin validate")
   fi
   if [ ${#claude_cmd[@]} -gt 0 ]; then
-    step "claude plugin validate (marketplace)" "${claude_cmd[@]}" plugin validate .
+    # --strict: un aviso (campo desconocido, metadata que falta…) también falla. Claude Code
+    # los tolera, pero claude.ai los marca o descarta al sincronizar el marketplace.
+    step "claude plugin validate (marketplace)" "${claude_cmd[@]}" plugin validate --strict .
     for p in plugins/*/; do
-      step "claude plugin validate ($p)" "${claude_cmd[@]}" plugin validate "$p"
+      step "claude plugin validate ($p)" "${claude_cmd[@]}" plugin validate --strict "$p"
     done
   fi
 else

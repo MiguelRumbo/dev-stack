@@ -95,7 +95,7 @@ Requisitos locales: Git Bash (en Windows), Python 3.8+ y, para la validación of
 
 ```bash
 bash scripts/ci.sh            # validación propia + tests de hooks + shellcheck si está instalado
-bash scripts/ci.sh --claude   # además `claude plugin validate` (usa npx si no hay claude)
+bash scripts/ci.sh --claude   # además `claude plugin validate --strict` (usa npx si no hay claude)
 ```
 
 GitHub Actions corre el mismo script en cada push a `main` y en cada PR, en Linux y Windows
@@ -104,7 +104,13 @@ GitHub Actions corre el mismo script en cada push a `main` y en cada PR, en Linu
 Qué se comprueba: JSON y manifiestos válidos, plugins de terceros fijados a un `sha`, skills con
 frontmatter correcto, rutas de hooks y plantillas, referencias `metodo:<skill>` existentes,
 ningún nombre personal en skills/plantillas, 14 pruebas de los hooks y la validación oficial
-de Claude Code.
+de Claude Code con `--strict` (los avisos también fallan).
+
+También lo que claude.ai rechaza al sincronizar el marketplace aunque Claude Code lo acepte:
+campos de `plugin.json` o de hooks que no reconoce (como `icon`; el icono se toma solo de
+`.claude-plugin/icon.png`) y entradas que declaran `skills`, `hooks`, etc. sin `"strict": false`
+(necesario cuando upstream no trae `plugin.json`, como c4-skills). Ver
+[`docs/COMPATIBILIDAD.md`](docs/COMPATIBILIDAD.md#avisos-al-sincronizar-en-claudeai).
 
 ### Versiones fijadas y cómo actualizarlas
 
@@ -114,7 +120,9 @@ Estado actual en [`docs/PINS.md`](docs/PINS.md).
 
 - **Automático:** el día 1 de cada mes `update-pins.yml` busca versiones nuevas, corre el CI completo
   con ellas y abre un PR con un informe de riesgo por dependencia (🚨 hooks/manifiesto/MCP que
-  se ejecutan solos, ⚠️ scripts, ➕ skills nuevas, 🔎 líneas sospechosas). El PR **nunca se
+  se ejecutan solos, ⚠️ scripts, ➕ skills nuevas, 🔎 líneas sospechosas, ℹ️ campos de hook
+  que claude.ai marcará al sincronizar; en las copias vendorizadas solo mira las skills que se
+  copian y avisa de las nuevas que no). El PR **nunca se
   mergea solo**: lo revisas y decides. También se lanza a mano desde Actions → "Actualizar
   versiones fijadas" (opcionalmente para una sola dependencia).
 - **Manual:**

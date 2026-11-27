@@ -36,9 +36,20 @@ RISKY_PATH = re.compile(
 )
 SUSPICIOUS_CODE = re.compile(
     r"curl |wget |Invoke-WebRequest|Invoke-RestMethod|fetch\(|https?://|base64|eval\(|exec\("
-    r"|child_process|subprocess|os\.system|rm -rf|chmod \+x|\.ssh|API_KEY|TOKEN|webhook",
+    r"|child_process|subprocess|os\.system|rm -rf|chmod \+x|\.ssh|webhook"
+    # En mayúsculas: "token" en minúsculas es casi siempre un design token y llenaba el informe.
+    r"|(?-i:API_KEY|TOKEN|SECRET)",
     re.IGNORECASE,
 )
+# Campos de un hook "type": "command" que Claude Code reconoce (https://code.claude.com/docs/en/hooks).
+# Los demás (env, windows, powershell… de otros agentes) los ignora y claude.ai avisa al sincronizar.
+COMMAND_HOOK_FIELDS = {"type", "command", "args", "async", "asyncRewake", "shell", "onFailure",
+                       "if", "timeout", "statusMessage", "once"}
+COMPONENT_FIELDS = {"commands", "agents", "skills", "hooks", "outputStyles", "themes",
+                    "mcpServers", "lspServers"}
+# Repo vendorizado -> plugin de este repo que lo copia (scripts/sync-vendored.sh). El informe
+# solo mira las skills que de verdad se copian; el resto del repo no llega a nadie.
+VENDORED_INTO = {"anthropics/skills": "frontend-design", "emilkowalski/skill": "emil-design-eng"}
 SUSPICIOUS_PROMPT = re.compile(
     r"ignore (all |any )?(previous|prior) instructions|ignora (las )?instrucciones"
     r"|do not (tell|inform) the user|no (le )?digas al usuario|without (asking|telling)"
@@ -74,7 +85,51 @@ def external_plugins(market):
         src = p["source"]
         if isinstance(src, dict) and src.get("source") in ("github", "git-subdir", "url"):
             spec = src.get("repo") or src.get("url")
-            yield p["name"], src, spec, src.get("path", "")
+            yield p, src, spec, src.get("path", "")
+
+
+def vendored_scope(repo):
+    """Rutas upstream que sync-vendored.sh copia: las skills que tiene el plugin local + LICENSE."""
+    plugin = VENDORED_INTO.get(repo)
+    skills = ROOT / "plugins" / plugin / "skills" if plugin else None
+    if not skills or not skills.is_dir():
+        return []
+    return ["LICENSE"] + [f"skills/{d.name}" for d in sorted(skills.iterdir()) if d.is_dir()]
+
+
+def show(clone, sha, path):
+    r = subprocess.run(["git", "show", f"{sha}:{path}"], cwd=clone, capture_output=True,
+                       text=True, encoding="utf-8", errors="replace")
+    return r.stdout if r.returncode == 0 else None
+
+
+def unknown_hook_fields(clone, sha, base):
+    raw = show(clone, sha, f"{base}hooks/hooks.json")
+    if raw is None:
+        return set()
+    try:
+        events = json.loads(raw).get("hooks", {})
+    except (ValueError, AttributeError):
+        return {"(hooks.json no es JSON válido)"}
+    return {key for groups in events.values() for group in groups
+            for hook in group.get("hooks", []) if hook.get("type") == "command"
+            for key in set(hook) - COMMAND_HOOK_FIELDS}
+
+
+def sync_checks(clone, old, new, subpath, entry):
+    """Lo que la versión nueva rompe o hace avisar al cargarla en Claude Code o claude.ai."""
+    out = []
+    base = f"{subpath.strip('/')}/" if subpath else ""
+    inline = sorted(COMPONENT_FIELDS & set(entry))
+    if inline and entry.get("strict") is False and show(clone, new, f"{base}.claude-plugin/plugin.json") is not None:
+        out.append(f"- 🚨 Upstream ya trae `.claude-plugin/plugin.json` y la entrada declara "
+                   f"{', '.join(inline)} con `\"strict\": false`: el plugin no cargará (manifiestos "
+                   "en conflicto). Quita esos campos y `strict` de la entrada.")
+    added = unknown_hook_fields(clone, new, base) - (unknown_hook_fields(clone, old, base) if old else set())
+    if added:
+        out.append("- ℹ️ Campos de hook que Claude Code ignora y claude.ai marca al sincronizar "
+                   f"(el hook corre igual con `command`): {', '.join(f'`{k}`' for k in sorted(added))}")
+    return out
 
 
 def read_vendored():
@@ -95,22 +150,38 @@ def write_vendored(pins):
     VENDORED.write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
 
 
-def analyze(url, old, new, subpath):
-    """Clona sin blobs y compara old..new. Devuelve (tag, líneas de informe)."""
+def analyze(url, old, new, paths, entry=None, subpath=""):
+    """Clona sin blobs y compara old..new dentro de `paths` (vacío = todo el repo).
+
+    `entry` es la entrada del marketplace (None para un repo vendorizado). Devuelve
+    (tag, líneas de informe).
+    """
     out = []
     with tempfile.TemporaryDirectory() as tmp:
         git("clone", "-q", "--filter=blob:none", "--no-checkout", url, tmp)
         tag = latest_tag_at(tmp, new)
+        if entry is not None:
+            out += sync_checks(tmp, old, new, subpath, entry)
         if not old:
             out.append("- Primera fijación: no hay versión anterior con la que comparar.")
             return tag, out
-        scope = ["--", subpath] if subpath else []
+        scope = ["--", *paths] if paths else []
         try:
             changed = git("diff", "--name-status", old, new, *scope, cwd=tmp).splitlines()
         except subprocess.CalledProcessError:
             out.append(f"- ⚠️ No se pudo comparar {old[:7]}..{new[:7]} (¿historia reescrita upstream?). Revisar a mano.")
             return tag, out
-        out.append(f"- Archivos cambiados: {len(changed)} · comparación: {url}/compare/{old[:12]}...{new[:12]}")
+        n = len(paths) - 1
+        where = f" en lo vendorizado ({n} skill{'s' if n != 1 else ''} + LICENSE)" if entry is None and paths else ""
+        out.append(f"- Archivos cambiados{where}: {len(changed)} · comparación: {url}/compare/{old[:12]}...{new[:12]}")
+        if entry is None and paths:
+            upstream = git("diff", "--name-status", "--diff-filter=A", old, new, "--",
+                           "skills/*/SKILL.md", cwd=tmp).splitlines()
+            for c in upstream:
+                path = c.split(maxsplit=1)[1]
+                if path.rsplit("/", 1)[0] not in paths:
+                    out.append(f"- ℹ️ Skill nueva upstream, no vendorizada (añádela a "
+                               f"`scripts/sync-vendored.sh` si la quieres): `{path}`")
         skills_added = [c for c in changed if c.startswith("A") and c.endswith("SKILL.md")]
         skills_removed = [c for c in changed if c.startswith("D") and c.endswith("SKILL.md")]
         for c in skills_added:
@@ -165,10 +236,10 @@ def main():
     rows = []
     changes = 0
 
-    targets = [(n, s, spec, sub, "plugin") for n, s, spec, sub in external_plugins(market)]
-    targets += [(repo, None, repo, "", "vendorizado") for repo in vendored]
+    targets = [(p["name"], s, spec, sub, "plugin", p) for p, s, spec, sub in external_plugins(market)]
+    targets += [(repo, None, repo, "", "vendorizado", None) for repo in vendored]
 
-    for name, src, spec, subpath, kind in targets:
+    for name, src, spec, subpath, kind, entry in targets:
         url = repo_url(spec)
         old = src.get("sha", "") if src is not None else vendored[name]
         try:
@@ -183,7 +254,8 @@ def main():
             continue
         changes += 1
         print(f"↑ {name:18} {old[:12] or '(sin fijar)'} -> {new[:12]}")
-        tag, lines = analyze(url, old, new, subpath)
+        paths = vendored_scope(name) if entry is None else ([subpath] if subpath else [])
+        tag, lines = analyze(url, old, new, paths, entry, subpath)
         report += [f"## {name} ({kind})", f"`{old[:12] or '—'}` → `{new[:12]}` {tag}".rstrip(), ""] + lines + [""]
         rows.append((name, spec, kind, new if args.apply else old, tag))
         if args.apply:
